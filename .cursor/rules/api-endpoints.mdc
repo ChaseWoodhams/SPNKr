@@ -1,0 +1,320 @@
+---
+description: Complete reference for all SPNKr API endpoints and their data structures
+globs: spnkr/services/**/*
+alwaysApply: false
+---
+
+# SPNKr API Endpoints Reference
+
+This document provides a comprehensive overview of all available API endpoints in the SPNKr Halo Infinite SDK, organized by service category.
+
+## Service Architecture
+
+The SPNKr client provides access to 6 main services, each targeting different aspects of the Halo Infinite API:
+
+```python
+from spnkr import HaloInfiniteClient
+
+client = HaloInfiniteClient(session, spartan_token, clearance_token)
+
+# Access services via client properties:
+client.profile        # ProfileService - User profiles and identification
+client.stats          # StatsService - Match history and statistics  
+client.skill          # SkillService - CSR/MMR skill ratings
+client.discovery_ugc  # DiscoveryUgcService - User-generated content
+client.economy        # EconomyService - Player customization
+client.gamecms_hacs   # GameCmsHacsService - Game metadata
+```
+
+## 1. ProfileService (`client.profile`)
+
+**Base URL**: `https://profile.svc.halowaypoint.com`
+
+### Endpoints
+
+#### `get_current_user()` → `User`
+- **Purpose**: Get the authenticated user's profile
+- **Returns**: User profile with XUID, gamertag, and gamerpic
+- **Authentication**: Requires valid tokens for current user
+
+#### `get_user_by_gamertag(gamertag: str)` → `User`
+- **Purpose**: Look up user profile by gamertag
+- **Parameters**: 
+  - `gamertag`: Player's gamertag (e.g., "PlayerName")
+- **Returns**: User profile data
+- **Use Case**: Convert gamertag to XUID for other API calls
+
+#### `get_user_by_id(xuid: str | int)` → `User`
+- **Purpose**: Get user profile by Xbox Live ID
+- **Parameters**: 
+  - `xuid`: 16-digit Xbox Live ID (string or int)
+- **Returns**: User profile data
+
+#### `get_users_by_id(xuids: Iterable[str | int])` → `list[User]`
+- **Purpose**: Batch lookup of multiple user profiles
+- **Parameters**: 
+  - `xuids`: List of Xbox Live IDs
+- **Returns**: List of User profiles
+- **Validation**: Raises TypeError if xuids is a string instead of iterable
+
+### Data Models
+- **User**: Contains `xuid`, `gamertag`, `gamerpic` (multiple sizes)
+- **GamerPicture**: URLs for small, medium, large, xlarge profile images
+
+---
+
+## 2. StatsService (`client.stats`)
+
+**Base URL**: `https://halostats.svc.halowaypoint.com:443`
+
+### Endpoints
+
+#### `get_match_count(player: str | int)` → `MatchCount`
+- **Purpose**: Get total match counts across game types
+- **Parameters**: 
+  - `player`: XUID or gamertag
+- **Returns**: Counts for custom, matchmade, local, and total matches
+- **Use Case**: Quick overview of player activity
+
+#### `get_service_record(player, match_type, **filters)` → `ServiceRecord`
+- **Purpose**: Comprehensive player statistics summary
+- **Parameters**:
+  - `player`: XUID or gamertag
+  - `match_type`: `"matchmade"`, `"custom"`, or `"local"`
+  - `season_id`: Filter by specific season (optional)
+  - `game_variant_category`: Filter by game mode category (optional)
+  - `is_ranked`: Filter for ranked/unranked (optional)
+  - `playlist_asset_id`: Filter by specific playlist (optional)
+  - `gameplay_interaction`: Filter by PVP/PVE (optional)
+- **Returns**: Detailed stats including K/D, accuracy, medals, time played
+- **Filter Rules**: Must use valid filter combinations (see service documentation)
+
+#### `get_match_history(player, start=0, count=25, match_type="all")` → `MatchHistory`
+- **Purpose**: Paginated list of recent matches
+- **Parameters**:
+  - `player`: XUID or gamertag
+  - `start`: Starting index (0-based pagination)
+  - `count`: Number of matches to return (max 25)
+  - `match_type`: `"all"`, `"matchmaking"`, `"custom"`, or `"local"`
+- **Returns**: List of match summaries with IDs, outcomes, dates
+- **Use Case**: Browse recent match activity
+
+#### `get_match_stats(match_id: str | UUID)` → `MatchStats`
+- **Purpose**: Detailed statistics for a specific match
+- **Parameters**: 
+  - `match_id`: Halo Infinite match GUID
+- **Returns**: Complete match data including all players, teams, and detailed stats
+- **Use Case**: Deep dive into individual match performance
+
+### Data Models
+- **MatchCount**: Simple counters for different match types
+- **ServiceRecord**: Comprehensive player stats with mode-specific breakdowns
+- **MatchHistory**: List of match summaries with pagination info
+- **MatchStats**: Complete match data with player and team statistics
+- **Stats**: Performance data with mode-specific stats (CTF, Oddball, etc.)
+
+---
+
+## 3. SkillService (`client.skill`)
+
+**Base URL**: `https://skill.svc.halowaypoint.com:443`
+
+### Endpoints
+
+#### `get_match_skill(match_id, xuids: Iterable[str | int])` → `MatchSkill`
+- **Purpose**: Get CSR and MMR data for specific players in a match
+- **Parameters**:
+  - `match_id`: Halo Infinite match GUID
+  - `xuids`: List of Xbox Live IDs to get skill data for
+- **Returns**: CSR changes and team MMR values for the match
+- **Validation**: xuids cannot be empty or a single string
+
+#### `get_playlist_csr(playlist_id, xuids, season_id=None)` → `PlaylistCsr`
+- **Purpose**: Get current CSR standings for players in a playlist
+- **Parameters**:
+  - `playlist_id`: Playlist asset ID (UUID)
+  - `xuids`: List of Xbox Live IDs
+  - `season_id`: Specific season (optional, defaults to current)
+- **Returns**: Current CSR ranks and tiers for each player
+- **Use Case**: Check competitive rankings
+
+### Data Models
+- **MatchSkill**: CSR changes and team MMR for a specific match
+- **PlaylistCsr**: Current CSR standings with rank, tier, and percentile
+- **CsrContainer**: CSR value with rank name and tier information
+- **RankRecap**: Historical rank progression data
+
+---
+
+## 4. DiscoveryUgcService (`client.discovery_ugc`)
+
+**Base URL**: `https://discovery-infiniteugc.svc.halowaypoint.com:443`
+
+### Endpoints
+
+#### `get_ugc_game_variant(asset_id, version_id)` → `UgcGameVariant`
+- **Purpose**: Get details about a custom game mode
+- **Parameters**: Asset ID and version ID (UUIDs)
+- **Returns**: Game mode configuration and metadata
+
+#### `get_map_mode_pair(asset_id, version_id)` → `MapModePair`
+- **Purpose**: Get details about a map/mode combination
+- **Parameters**: Asset ID and version ID (UUIDs)
+- **Returns**: Combined map and mode configuration
+
+#### `get_map(asset_id, version_id)` → `Map`
+- **Purpose**: Get details about a custom map
+- **Parameters**: Asset ID and version ID (UUIDs)
+- **Returns**: Map metadata and configuration
+
+#### `get_playlist(asset_id, version_id)` → `Playlist`
+- **Purpose**: Get details about a playlist
+- **Parameters**: Asset ID and version ID (UUIDs)
+- **Returns**: Playlist configuration and map/mode rotation
+
+#### `search_assets(**filters)` → `AssetSearchPage`
+- **Purpose**: Search for user-generated content (maps, modes, prefabs)
+- **Parameters**:
+  - `start`: Pagination offset (default: 0)
+  - `count`: Results per page (1-101, default: 25)
+  - `sort`: Sort property (`"plays_recent"`, `"likes"`, `"name"`, etc.)
+  - `order`: `"asc"` or `"desc"`
+  - `asset_kind`: `"map"`, `"prefab"`, or `"ugc_game_variant"`
+  - `term`: Search term
+  - `tags`: List of tags (OR operation)
+  - `author`: Author ID in format `"xuid(<xuid>)"`
+  - `average_rating_min`: Minimum rating (0-5)
+  - Date filters: `from_date_*_utc`, `to_date_*_utc`
+- **Returns**: Paginated search results with asset metadata
+
+#### `get_film_by_match_id(match_id)` → `Film`
+- **Purpose**: Get film metadata and download URLs for a match
+- **Parameters**: Match ID (UUID)
+- **Returns**: Film download URLs and metadata for theater mode analysis
+
+### Data Models
+- **AssetSearchPage**: Paginated search results with filtering metadata
+- **AssetSearchResult**: Individual asset with stats, ratings, and metadata
+- **UgcGameVariant**: Custom game mode configuration
+- **Map**: Custom map details and configuration
+- **Film**: Theater mode film data with download URLs
+
+---
+
+## 5. EconomyService (`client.economy`)
+
+**Base URL**: `https://economy.svc.halowaypoint.com:443`
+
+### Endpoints
+
+#### `get_player_customization(xuid, view_type="public")` → `PlayerCustomization`
+- **Purpose**: Get player's Spartan customization choices
+- **Parameters**:
+  - `xuid`: Xbox Live ID
+  - `view_type`: `"public"` (default) or `"private"` (authenticated user only)
+- **Returns**: Complete customization loadout including armor, colors, emblems
+- **Use Case**: Display player's Spartan appearance
+
+### Data Models
+- **PlayerCustomization**: Complete customization data
+- **ThemeEmblem**: Emblem and color theme selections
+
+---
+
+## 6. GameCmsHacsService (`client.gamecms_hacs`)
+
+**Base URL**: `https://gamecms-hacs.svc.halowaypoint.com`
+
+### Endpoints
+
+#### `get_medal_metadata()` → `MedalMetadata`
+- **Purpose**: Get complete medal definitions and metadata
+- **Returns**: All medals with names, descriptions, and difficulty ratings
+- **Use Case**: Medal lookup and display
+
+#### `get_csr_season_calendar()` → `CsrSeasonCalendar`
+- **Purpose**: Get CSR season dates and IDs
+- **Returns**: Historical and current CSR season information
+- **Use Case**: Filter data by competitive seasons
+
+#### `get_season_calendar()` → `SeasonCalendar`
+- **Purpose**: Get reward track season information
+- **Returns**: Battle pass and event season data
+- **Use Case**: Context for progression rewards
+
+#### `get_career_reward_track()` → `CareerRewardTrack`
+- **Purpose**: Get career rank progression rewards
+- **Returns**: Career rank reward track configuration
+
+#### `get_image(relative_path: str)` → `ImageResponse`
+- **Purpose**: Download game images (emblems, rank icons, etc.)
+- **Parameters**: 
+  - `relative_path`: Image path like `"career_rank/ProgressWidget/272_Hero.png"`
+- **Returns**: Raw image data
+- **Use Case**: Display game assets in applications
+
+### Data Models
+- **MedalMetadata**: Complete medal database
+- **CsrSeasonCalendar**: Competitive season dates and IDs
+- **SeasonCalendar**: Reward track season information
+- **CareerRewardTrack**: Career progression rewards
+
+---
+
+## 7. Film Analysis API
+
+**Module**: `spnkr.film.api`
+
+### Functions
+
+#### `read_highlight_events(client, match_id)` → `list[HighlightEvent]`
+- **Purpose**: Download and parse theater mode film data for match events
+- **Parameters**:
+  - `client`: HaloInfiniteClient instance
+  - `match_id`: Match UUID
+- **Returns**: List of parsed highlight events (kills, deaths, medals)
+- **Limitations**: 
+  - Only human players (no bots)
+  - No team ID information
+  - Mode-specific details not available
+  - AI kills not recorded
+- **Use Case**: Detailed match timeline analysis
+
+### Data Models
+- **HighlightEvent**: Individual match event with timestamp and player data
+
+---
+
+## Common Patterns & Best Practices
+
+### Authentication
+- All endpoints require valid `spartan_token` and `clearance_token`
+- Tokens are automatically included in request headers by the client
+
+### Rate Limiting
+- Default: 5 requests per second per service
+- Configurable during client initialization
+- Applied per service, not globally
+
+### Error Handling
+- All endpoints return `JsonResponse[T]` or `ImageResponse`
+- Use `await response.parse()` to get typed data
+- Handle `ClientResponseError` for HTTP errors
+- Handle `FilmReadError` for film-specific errors
+
+### Data Types
+- Xbox Live IDs: Accept `str` or `int`, internally converted to proper format
+- UUIDs: Accept `str` or `UUID` objects
+- Dates: Use `datetime` objects, automatically formatted for API
+
+### Pagination
+- Match history: `start` + `count` parameters
+- Asset search: `start` + `count` parameters  
+- Maximum results per page varies by endpoint
+
+### Filtering
+- Service records support complex filter combinations
+- Asset search supports extensive filtering options
+- Invalid filter combinations raise `ValueError`
+
+This comprehensive API reference enables developers to effectively utilize all available Halo Infinite data through the SPNKr SDK.
