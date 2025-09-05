@@ -10,12 +10,15 @@ from spnkr import AzureApp, authenticate_player
 
 dotenv.load_dotenv()
 
-CLIENT_ID = os.environ["SPNKR_CLIENT_ID"]
-CLIENT_SECRET = os.environ["SPNKR_CLIENT_SECRET"]
-REDIRECT_URI = os.environ["SPNKR_REDIRECT_URI"]
+CLIENT_ID = os.environ.get("SPNKR_CLIENT_ID", "")
+CLIENT_SECRET = os.environ.get("SPNKR_CLIENT_SECRET", "")
+REDIRECT_URI = os.environ.get("SPNKR_REDIRECT_URI", "https://localhost")
 
 
 async def main() -> None:
+    if not CLIENT_ID or not CLIENT_SECRET:
+        raise RuntimeError("SPNKR_CLIENT_ID and SPNKR_CLIENT_SECRET must be set in environment")
+
     app = AzureApp(CLIENT_ID, CLIENT_SECRET, REDIRECT_URI)
 
     async with ClientSession() as session:

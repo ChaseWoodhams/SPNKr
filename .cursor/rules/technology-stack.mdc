@@ -25,10 +25,9 @@ aiolimiter = "~=1.0"
 - **aiohttp**: Asynchronous HTTP client/server framework
   - **Version Strategy**: Range `>=3.9,<4.0` prevents major breaking changes
   - **Best Practice**: ✅ Good - aiohttp 3.9+ includes security fixes and performance improvements
-  - **Remarks**: Version 4.0 will introduce breaking changes, so the upper bound is appropriate
 
 - **aiolimiter**: Rate limiting for asyncio applications
-  - **Version Strategy**: Compatible release `~=1.0` (allows 1.x but not 2.0)
+  - **Version Strategy**: Compatible release `~=1.0`
   - **Best Practice**: ✅ Excellent - Prevents breaking changes while allowing bug fixes
 
 ### Data Validation & Parsing
@@ -38,53 +37,51 @@ bitstring = "~=4.0"
 ```
 
 - **pydantic**: Data validation using Python type annotations
-  - **Version Strategy**: Range `>=2.8,<3.0` stays within v2 ecosystem
-  - **Best Practice**: ✅ Excellent - Pydantic v2 offers significant performance improvements over v1
-  - **Remarks**: v2.8+ includes important bug fixes and performance optimizations
+  - **Best Practice**: ✅ Excellent - Pydantic v2 is fast and modern
 
-- **bitstring**: Binary data manipulation library
-  - **Version Strategy**: Compatible release `~=4.0`
-  - **Best Practice**: ✅ Good - Stable API with regular maintenance updates
+- **bitstring**: Binary manipulation used for film parsing
+
+## Web App (Backend)
+
+- **Flask**: Simple HTTP server to expose a small API and serve static files
+- **flask-cors**: CORS management
+- **python-dotenv**: Loads `.env` for local development
+
+Best practices:
+- Read credentials from environment only (no hardcoding)
+- Normalize env values (strip quotes/whitespace) to avoid `invalid_grant`
+- Run production with a WSGI server (gunicorn/waitress) and `debug=False`
+- Restrict CORS in production via `CORS_ORIGINS`
+
+## Web App (Frontend)
+
+- Static HTML/CSS/JS (no framework)
+- Dark theme styling; metric tiles; playlist tabs
+- Fetches `/api/service-record` and renders service record + CSR
 
 ## Optional Dependencies
 
-### Caching Support
 ```toml
 [project.optional-dependencies]
 cache = ["aiohttp-client-cache>=0.10"]
 ```
 
-- **aiohttp-client-cache**: HTTP response caching for aiohttp
-  - **Best Practice**: ✅ Good - Optional dependency allows users to choose caching
-  - **Remarks**: Version 0.10+ provides better async support and SQLite backend
+- **aiohttp-client-cache**: Optional caching layer
 
 ## Development Dependencies
 
 ### Testing Framework
 ```toml
 pytest = "==8.4.1"
-pytest-asyncio = ">=1.1.0"  # (in dev-dependencies: 1.1.0)
+pytest-asyncio = ">=1.1.0"
 python-dotenv = "==1.1.1"
 coverage = "==7.10.0"
 ```
-
-- **pytest**: Testing framework
-  - **Version Strategy**: Pinned to specific version for consistency
-  - **Best Practice**: ✅ Good - pytest 8.4.1 is stable and feature-complete
-  - **Remarks**: Consider using range for minor updates: `>=8.4.1,<9.0`
-
-- **pytest-asyncio**: Async testing support
-  - **Best Practice**: ✅ Good - Version 1.1.0+ supports modern asyncio patterns
 
 ### Code Quality & Linting
 ```toml
 ruff = "==0.12.5"
 ```
-
-- **ruff**: Fast Python linter and formatter (replaces flake8, black, isort)
-  - **Version Strategy**: Pinned version for consistent CI/CD
-  - **Best Practice**: ✅ Excellent - Ruff is the modern standard for Python linting
-  - **Remarks**: Consider allowing patch updates: `>=0.12.5,<0.13.0`
 
 ### Documentation
 ```toml
@@ -93,17 +90,10 @@ mkdocstrings[python] = "==0.30.0"
 mkdocs-material = "==9.6.15"
 ```
 
-- **mkdocs**: Static site generator for documentation
-  - **Best Practice**: ✅ Good - Pinned versions ensure consistent doc builds
-  - **Remarks**: MkDocs Material 9.6.15 is current and well-maintained
-
 ### Testing Infrastructure
 ```toml
 tox = ">=4.28.1"
 ```
-
-- **tox**: Testing across multiple Python versions
-  - **Best Practice**: ✅ Good - Allows testing Python 3.11, 3.12, 3.13
 
 ## Build System
 
@@ -113,60 +103,31 @@ requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
 ```
 
-- **setuptools**: Modern Python packaging
-  - **Best Practice**: ✅ Good - Version 61+ supports modern pyproject.toml configuration
-  - **Remarks**: Consider migrating to `hatchling` or `flit-core` for faster builds
-
 ## Package Manager
 
-- **UV**: Modern Python package manager (evidenced by `uv.lock`)
-  - **Best Practice**: ✅ Excellent - UV is significantly faster than pip
-  - **Remarks**: Lock file ensures reproducible builds
+- **UV**: Modern Python package manager (`uv.lock`)
+
+## Environment & Secrets
+
+- `.env.example` documents required env vars:
+  - `SPNKR_CLIENT_ID`, `SPNKR_CLIENT_SECRET`, `SPNKR_REDIRECT_URI`, `SPNKR_REFRESH_TOKEN`
+  - optional: `DEFAULT_GAMERTAG`, `PORT`, `FLASK_DEBUG`, `CORS_ORIGINS`
+- `.env` is local-only (do not commit). In production, use a secrets manager or platform env vars.
 
 ## Version Management Best Practices
 
-### ✅ What You're Doing Right
-
-1. **Range Specifications**: Using `>=x.y,<z.0` prevents major breaking changes
-2. **Compatible Releases**: Using `~=x.y` for stable APIs
-3. **Multi-Python Support**: Testing across Python 3.11-3.13
-4. **Modern Tools**: Using ruff, UV, and modern setuptools
-5. **Optional Dependencies**: Allowing users to choose caching support
-6. **Lock Files**: UV lock ensures reproducible builds
-
-### 🔄 Recommendations for Improvement
-
-1. **Development Dependencies**: Consider version ranges instead of pinning:
-   ```toml
-   # Instead of: pytest = "==8.4.1"
-   # Consider: pytest = ">=8.4.1,<9.0"
-   ```
-
-2. **Security Updates**: Regularly run `uv audit` to check for vulnerabilities
-
-3. **Dependency Updates**: Schedule monthly reviews using `uv outdated`
-
-4. **Build Backend**: Consider migrating to faster build backends:
-   ```toml
-   # Modern alternative:
-   build-backend = "hatchling.build"
-   ```
+- Use upper bounds to prevent breaking changes
+- Audit regularly (`uv audit`) and review monthly (`uv outdated`)
+- Prefer ranges for dev tooling when feasible (e.g., `pytest>=8.4.1,<9.0`)
 
 ## Architecture Alignment
 
-The dependency choices align well with the project's architecture:
-
-- **Async-First**: aiohttp, aiolimiter, pytest-asyncio support async patterns
-- **Type Safety**: pydantic provides runtime validation with type hints
-- **Performance**: Modern tools (ruff, UV) prioritize speed
-- **Maintainability**: Clear separation of prod/dev/optional dependencies
-- **Documentation**: Comprehensive docs tooling with MkDocs
+- **Async-First**: aiohttp + rate limiting per service
+- **Type Safety**: Pydantic models for all responses
+- **Small Web Surface**: Flask API delegates to SDK; static front-end
 
 ## Security Considerations
 
-- **Regular Audits**: Use `uv audit` for vulnerability scanning
-- **Version Bounds**: Upper bounds prevent unexpected breaking changes
-- **Minimal Surface**: Optional dependencies reduce attack surface
-- **Modern Versions**: All dependencies use secure, maintained versions
-
-This technology stack represents modern Python development best practices with a focus on async performance, type safety, and maintainability.
+- Keep refresh tokens server-side; never expose to the browser
+- Restrict CORS in production
+- Do not log secrets; redact tokens in error logs

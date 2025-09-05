@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Halo Infinite Service Record</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="topbar">
+        <div class="brand">
+            <div class="logo"></div>
+            <span class="brand-title">HALO QUERY</span>
+        </div>
+        <div class="profile-chip" id="profileChip"></div>
+    </nav>
+
+    <!-- Search -->
+    <section class="hero">
+        <div class="hero-inner">
+            <div class="search-wrap">
+                <input type="text" id="gamertagInput" placeholder="Search for a player..." maxlength="16" />
+                <button id="searchBtn" onclick="searchPlayer()">
+                    <span id="btnText">Search</span>
+                    <div id="spinner" class="spinner hidden"></div>
+                </button>
+            </div>
+        </div>
+    </section>
+
+    <div class="container">
+        <div id="errorMessage" class="error-message hidden"></div>
+
+        <div id="results" class="results hidden">
+            <!-- Player header -->
+            <header class="player-header">
+                <div class="avatar" id="playerAvatar"></div>
+                <div class="player-meta">
+                    <h2 id="playerName">Player</h2>
+                    <p id="playerXuid" class="muted"></p>
+                </div>
+            </header>
+
+            <!-- Playlist tabs -->
+            <div id="playlistTabs" class="tabs hidden"></div>
+
+            <!-- Metrics (CSR tiles) -->
+            <section id="csrMetrics" class="metrics hidden">
+                <div class="metric">
+                    <div class="metric-label">Current CSR</div>
+                    <div class="metric-value" id="metricCurrent">-</div>
+                    <div class="metric-sub" id="metricCurrentTier">-</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">Season Peak CSR</div>
+                    <div class="metric-value" id="metricSeason">-</div>
+                    <div class="metric-sub" id="metricSeasonTier">-</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">All Time Peak CSR</div>
+                    <div class="metric-value" id="metricAllTime">-</div>
+                    <div class="metric-sub" id="metricAllTimeTier">-</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-label">CSR Average</div>
+                    <div class="metric-value" id="metricAverage">-</div>
+                    <div class="metric-sub" id="metricAverageTier">-</div>
+                </div>
+            </section>
+
+            <!-- Original stats grid (kept) -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <h3>Match Record</h3>
+                    <div class="stat-row"><span>Total Matches:</span><span id="totalMatches">-</span></div>
+                    <div class="stat-row"><span>Wins:</span><span id="wins" class="stat-wins">-</span></div>
+                    <div class="stat-row"><span>Losses:</span><span id="losses" class="stat-losses">-</span></div>
+                    <div class="stat-row"><span>Ties:</span><span id="ties">-</span></div>
+                    <div class="stat-row highlight"><span>Win Rate:</span><span id="winRate">-</span></div>
+                    <div class="stat-row"><span>Time Played:</span><span id="timePlayed">-</span></div>
+                </div>
+
+                    <div class="stat-card">
+                        <h3>Combat Stats</h3>
+                        <div class="stat-row"><span>Kills:</span><span id="kills" class="stat-kills">-</span></div>
+                        <div class="stat-row"><span>Deaths:</span><span id="deaths" class="stat-deaths">-</span></div>
+                        <div class="stat-row"><span>Assists:</span><span id="assists">-</span></div>
+                        <div class="stat-row highlight"><span>K/D Ratio:</span><span id="kdRatio">-</span></div>
+                        <div class="stat-row"><span>Accuracy:</span><span id="accuracy">-</span></div>
+                        <div class="stat-row"><span>Damage Dealt:</span><span id="damageDealt">-</span></div>
+                    </div>
+
+                    <div class="stat-card">
+                        <h3>Round Performance</h3>
+                        <div class="stat-row"><span>Rounds Won:</span><span id="roundsWon">-</span></div>
+                        <div class="stat-row"><span>Rounds Lost:</span><span id="roundsLost">-</span></div>
+                        <div class="stat-row"><span>Rounds Tied:</span><span id="roundsTied">-</span></div>
+                    </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

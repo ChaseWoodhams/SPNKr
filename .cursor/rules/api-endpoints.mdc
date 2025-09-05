@@ -1,7 +1,7 @@
 ---
 description: Complete reference for all SPNKr API endpoints and their data structures
 globs: spnkr/services/**/*
-alwaysApply: false
+alwaysApply: true
 ---
 
 # SPNKr API Endpoints Reference

@@ -6,7 +6,7 @@ alwaysApply: false
 
 # SPNKr Project Structure Guide
 
-This document outlines the directory structure and important files in the SPNKr project - a Python SDK for the Halo Infinite web API.
+This document outlines the directory structure and important files in the SPNKr project - a Python SDK for the Halo Infinite web API with a small Flask+HTML web app.
 
 ## Root Directory Files
 
@@ -17,7 +17,9 @@ This document outlines the directory structure and important files in the SPNKr 
 ├── MANIFEST.in            # Controls which files are included in the Python package distribution
 ├── pyproject.toml         # Python project configuration (dependencies, build settings, tools)
 ├── uv.lock                # Lock file for UV package manager (exact dependency versions)
-└── mkdocs.yml             # MkDocs configuration for generating project documentation
+├── mkdocs.yml             # MkDocs configuration for generating project documentation
+├── .env.example           # Example environment variables for local development
+└── .env                   # Local secrets (ignored); used by web app and scripts
 ```
 
 ## Main Package Directory (`spnkr/`)
@@ -42,7 +44,7 @@ Handles Xbox Live and Halo Infinite authentication flows:
 auth/
 ├── __init__.py            # Exports authentication classes and functions
 ├── app.py                 # AzureApp class for OAuth2 application configuration
-├── core.py                # Main authentication functions (authenticate_player, refresh_tokens)
+├── core.py                # authenticate_player, refresh_player_tokens
 ├── halo.py                # Halo-specific token classes (SpartanToken, ClearanceToken)
 ├── oauth.py               # OAuth2 flow implementation for Xbox Live
 ├── player.py              # AuthenticatedPlayer class storing user credentials
@@ -59,7 +61,7 @@ services/
 ├── base.py                # BaseService - common functionality for all services
 ├── discovery_ugc.py       # User-generated content discovery (maps, game modes)
 ├── economy.py             # Store and player customization data
-├── gamecms_hacs.py        # Game content management (medals, weapons metadata)
+├── gamecms_hacs.py        # Game content management (medals, seasons)
 ├── profile.py             # User profile data (XUIDs, gamertags, Spartan appearance)
 ├── skill.py               # Skill rating data (CSR, MMR by playlist/match)
 └── stats.py               # Match statistics and game history
@@ -71,16 +73,16 @@ Pydantic models for API response data structures:
 
 ```
 models/
-├── __init__.py            # Package marker (currently minimal)
-├── base.py                # Base model classes and common utilities
-├── discovery_ugc.py       # Models for UGC discovery responses
-├── economy.py             # Models for economy/store data
-├── gamecms_hacs.py        # Models for game content metadata
-├── profile.py             # Models for user profile data
-├── refdata.py             # Reference data models (maps, modes, weapons)
-├── skill.py               # Models for skill/ranking data
-├── stats.py               # Models for match statistics
-└── types.py               # Common type definitions and enums
+├── __init__.py
+├── base.py
+├── discovery_ugc.py
+├── economy.py
+├── gamecms_hacs.py
+├── profile.py
+├── refdata.py
+├── skill.py
+├── stats.py
+└── types.py
 ```
 
 ### Film Analysis (`spnkr/film/`)
@@ -89,97 +91,61 @@ Tools for analyzing Halo Infinite film/replay files:
 
 ```
 film/
-├── __init__.py            # Exports film analysis functions
-├── api.py                 # Main film reading and parsing functions
-├── highlight_events.py    # HighlightEvent model and parsing logic
-├── medals.py              # Medal detection and classification
-└── medal_codes.json       # JSON mapping of medal codes to names
+├── __init__.py
+├── api.py
+├── highlight_events.py
+├── medals.py
+└── medal_codes.json
+```
+
+## Web App (`web/` + `web_server.py`)
+
+A lightweight Flask API and static front-end to view service records and CSR.
+
+```
+web_server.py          # Flask server: loads .env, exposes /api/service-record and serves static files
+web/
+├── index.html         # Dark UI with search, player header, playlist tabs, metric tiles
+├── styles.css         # Dark theme, responsive layout, metric/tabs styles
+└── script.js          # Fetches data, renders tabs/metrics, search handling
+```
+
+- Server reads environment via `.env` (see `.env.example`) with variables:
+  - `SPNKR_CLIENT_ID`, `SPNKR_CLIENT_SECRET`, `SPNKR_REDIRECT_URI`, `SPNKR_REFRESH_TOKEN`
+  - Optional: `PORT`, `FLASK_DEBUG`, `CORS_ORIGINS`, `DEFAULT_GAMERTAG`
+
+## Scripts (`scripts/`)
+
+Example scripts and utilities for common tasks (now env-driven):
+
+```
+scripts/
+├── authenticate.py         # Obtain a refresh token (interactive) using env credentials
+├── get_refresh_token.py    # Alternative flow to print refresh token (interactive)
+├── get_gamertags.py        # Example: fetch your profile using tokens from env
+└── download_film_by_match.py  # Example: check film availability for a match
 ```
 
 ## Documentation (`docs/`)
 
-MkDocs-based documentation source files:
-
-```
-docs/
-├── index.md               # Documentation homepage
-├── getting-started.md     # Installation and setup guide
-├── basic-usage.md         # Basic API usage examples
-└── reference/             # API reference documentation
-    ├── authentication.md  # Authentication flow documentation
-    ├── client.md          # HaloInfiniteClient reference
-    ├── services.md        # Service classes documentation
-    ├── responses.md       # Response handling reference
-    ├── models.md          # Data models documentation
-    ├── film.md            # Film analysis documentation
-    ├── reference-data.md  # Reference data utilities
-    └── extras.md          # Additional utilities documentation
-```
+MkDocs-based documentation source files (unchanged).
 
 ## Testing (`tests/`)
 
-Comprehensive test suite with unit and integration tests:
-
-```
-tests/
-├── __init__.py            # Test package marker
-├── unit/                  # Unit tests for individual components
-│   ├── conftest.py        # Unit test configuration and fixtures
-│   ├── test_auth_*.py     # Authentication module tests
-│   ├── test_client.py     # Client class tests
-│   ├── test_models*.py    # Data model tests
-│   ├── test_services_*.py # Service class tests
-│   └── test_*.py          # Other component tests
-├── integration/           # Integration tests with live API
-│   ├── conftest.py        # Integration test configuration
-│   ├── test_client.py     # End-to-end client tests
-│   └── test_film.py       # Film analysis integration tests
-└── data/                  # Test data files
-    ├── film/              # Sample film files for testing
-    └── responses/         # Mock API response files
-```
-
-## Scripts (`scripts/`)
-
-Example scripts and utilities for common tasks:
-
-```
-scripts/
-├── authenticate.py        # Initial OAuth2 authentication flow example
-├── download_film_by_match.py  # Download and analyze match film files
-└── get_gamertags.py       # Retrieve gamertags from XUIDs example
-```
+Comprehensive unit/integration tests (unchanged).
 
 ## Configuration Files
 
-- **`.cursor/rules/`** - Cursor IDE rules for code consistency
-- **`pyproject.toml`** - Python project configuration (dependencies, build, linting)
-- **`uv.lock`** - UV package manager lock file
-- **`mkdocs.yml`** - Documentation generation configuration
+- **`.cursor/rules/`** - Cursor rules for code and documentation consistency
+- **`pyproject.toml`** - Project config (deps, linting, tox)
+- **`uv.lock`** - Reproducible installs
+- **`.env.example` / `.env`** - Local environment settings (never commit real secrets)
 
-## Key Architecture Patterns
+## Patterns & Notes
 
-1. **Service-Oriented**: Each API category has its own service class
-2. **Async/Await**: All API calls use asyncio for non-blocking operations
-3. **Pydantic Models**: Strong typing with automatic validation
-4. **Rate Limiting**: Built-in request throttling per service
-5. **Caching Support**: Optional aiohttp-client-cache integration
-6. **Authentication Flow**: Multi-step Xbox Live → Halo Infinite token chain
+- **Async-first**: aiohttp ClientSession shared per request; rate limits per service
+- **Tokens**: refresh token → spartan/clearance headers; tokens cached per request currently
+- **Front-end**: static files; CSR tabs per playlist; metric tiles for current/season/all-time CSR
+- **Env normalization**: the server trims quotes/whitespace in env values to prevent invalid_grant
 
-## File Naming Conventions
-
-- **Snake_case** for Python files and directories
-- **Kebab-case** for documentation files
-- **Test files** prefixed with `test_`
-- **Private modules** prefixed with `_` (none currently used)
-- **Init files** for package structure (`__init__.py`)
-
-## Development Workflow Files
-
-- **`CHANGES.md`** - Maintain version history
-- **`pyproject.toml`** - Configure dependencies and tools
-- **`tests/`** - Write tests before implementing features
-- **`docs/`** - Update documentation with new features
-- **`scripts/`** - Provide usage examples
-
-This structure supports a maintainable, well-documented Python SDK with clear separation of concerns and comprehensive testing.
+This structure supports a maintainable SDK with a simple, modern web UI for quick inspection of player data.
